@@ -7,7 +7,7 @@ need_text(){ grep -Fq -- "$2" "$1" || fail "$1 missing: $2"; }
 reject_text(){ if grep -Fq -- "$2" "$1"; then fail "$1 contains forbidden regression: $2"; fi; }
 
 # Required public entry points and shared runtime.
-for f in index.html pc/index.html mobile/index.html assets/v2.js assets/v2-patch.js assets/v2-acceptance.js assets/v2-redteam.js mobile/sw.js mobile/register-sw.js mobile/manifest.webmanifest; do
+for f in index.html pc/index.html mobile/index.html assets/v2.js assets/v2-patch.js assets/v2-acceptance.js assets/v2-redteam.js assets/v2-quality.js mobile/sw.js mobile/register-sw.js mobile/manifest.webmanifest; do
   need_file "$f"
 done
 
@@ -21,6 +21,7 @@ for f in pc/index.html mobile/index.html; do
   need_text "$f" '../assets/v2-patch.js'
   need_text "$f" '../assets/v2-acceptance.js'
   need_text "$f" '../assets/v2-redteam.js'
+  need_text "$f" '../assets/v2-quality.js'
   need_text "$f" 'Content-Security-Policy'
 done
 
@@ -29,6 +30,7 @@ need_text mobile/index.html 'manifest.webmanifest'
 need_text mobile/index.html './register-sw.js'
 need_text mobile/sw.js '../assets/v2-acceptance.js'
 need_text mobile/sw.js '../assets/v2-redteam.js'
+need_text mobile/sw.js '../assets/v2-quality.js'
 need_text mobile/sw.js "url.origin!==self.location.origin"
 
 # Two-mode product contract.
@@ -45,12 +47,15 @@ need_text assets/v2-acceptance.js 'data-suggest='
 need_text assets/v2-acceptance.js '活動ブロック候補も説明用で、得点には直接入りません。'
 reject_text assets/v2-acceptance.js 'fileAnalysis.features.forEach(k=>state.add(k))'
 
-# Genericity RED TEAM layer must remain active in production.
+# Genericity and result-quality layers must remain active in production.
 need_text assets/v2-redteam.js '_inferFeaturesBeforeRedTeam'
 need_text assets/v2-redteam.js "f.delete('cur_audio')"
+need_text assets/v2-quality.js 'RESULT_QUALITY_THRESHOLDS'
+need_text assets/v2-quality.js '追加機能なしでも可'
+need_text assets/v2-quality.js '未確定（活動・教室条件から選択）'
 
 # Syntax smoke. Node is available on GitHub-hosted runners.
-for f in assets/v2.js assets/v2-patch.js assets/v2-acceptance.js assets/v2-redteam.js mobile/sw.js mobile/register-sw.js; do
+for f in assets/v2.js assets/v2-patch.js assets/v2-acceptance.js assets/v2-redteam.js assets/v2-quality.js mobile/sw.js mobile/register-sw.js; do
   node --check "$f" >/dev/null || fail "JavaScript syntax error in $f"
 done
 
