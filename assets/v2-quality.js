@@ -1,9 +1,10 @@
 // Result-quality guardrails.
 // Keep targets, constraints, and explicit feature needs separate.
 
-// Do not infer optional functions from learner level or device availability alone.
+// Do not infer optional functions from learner level, L1 composition, or device availability alone.
 delete V2.axes.support.items.level.w.a2;
 delete V2.axes.support.items.l1.w.prea1;
+delete V2.axes.support.items.l1.w.mixed_l1;
 V2.axes.support.items.history.w={log:10};
 
 const RESULT_QUALITY_THRESHOLDS={
