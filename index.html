@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>授業形態 観点別チェックシート</title>
+<style>
+:root{--ink:#172033;--muted:#667085;--bg:#f4f6f8;--card:#fff;--line:#d8dee8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;line-height:1.6}main{max-width:860px;margin:auto;padding:48px 18px}h1{font-size:clamp(28px,5vw,46px);margin:0 0 10px}p{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:28px}.card{display:block;text-decoration:none;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;min-height:180px;box-shadow:0 8px 24px rgba(23,32,51,.06)}.card:hover{transform:translateY(-2px)}.label{display:inline-block;background:#172033;color:#fff;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700}.card h2{margin:14px 0 6px;font-size:24px}.note{font-size:14px}.auto{margin-top:24px;padding:14px 16px;background:#fff;border:1px solid var(--line);border-radius:14px}@media(max-width:680px){main{padding:28px 12px}.grid{grid-template-columns:1fr}.card{min-height:0;padding:20px}}
+</style>
+</head>
+<body>
+<main>
+<h1>授業形態 観点別チェックシート</h1>
+<p>PreA1〜A2を中心に、学習者の発話・行動から授業形態と教材媒体を別々に判定します。</p>
+<div class="grid">
+<a class="card" href="./pc/"><span class="label">PC</span><h2>PC版</h2><p>教師PCや授業準備時の検討向け。広い画面で複数項目を一覧しながらチェックできます。</p></a>
+<a class="card" href="./mobile/"><span class="label">SMARTPHONE</span><h2>スマホ版</h2><p>片手タップ、1列表示、固定判定ボタン、入力状態の保存に対応したスマホ向けUIです。</p></a>
+</div>
+<div class="auto" id="hint">端末に合う版を選んでください。</div>
+</main>
+<script>
+const mobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||innerWidth<720;
+document.getElementById('hint').innerHTML=mobile?'この端末では <b>スマホ版</b> がおすすめです。':'この端末では <b>PC版</b> がおすすめです。';
+</script>
+</body>
+</html>
