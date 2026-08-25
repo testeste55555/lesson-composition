@@ -1,0 +1,19 @@
+name: UI Smoke
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ui-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Run UI smoke checks
+        shell: bash
+        run: bash tests/ui-smoke.sh
