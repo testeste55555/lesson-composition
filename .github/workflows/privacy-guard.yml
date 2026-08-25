@@ -52,7 +52,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if git grep -nEi '<script[^>]+src=["'"']https?://' -- '*.html' ; then
+          if git grep -nEi "<script[^>]+src=['\"]https?://" -- '*.html' ; then
             echo 'Privacy Guard: external script dependency detected. Review privacy impact before allowing it.'
             exit 1
           fi
