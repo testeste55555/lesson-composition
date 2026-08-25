@@ -3,12 +3,17 @@
 
 (function(){
   function bestPositive(arr){ return (arr||[]).find(x=>x.score>0)||null; }
+  function recommended(axisKey,arr){
+    const top=bestPositive(arr);
+    const threshold=(RESULT_QUALITY_THRESHOLDS[axisKey]||{}).recommend||1;
+    return top&&top.score>=threshold?top:null;
+  }
   function strongEnoughPair(arr){
     const p=(arr||[]).filter(x=>x.score>0);
     if(p.length<2) return null;
     const [a,b]=p;
     const threshold=(RESULT_QUALITY_THRESHOLDS.activity||{}).recommend||5;
-    if(b.score>=threshold && b.score/a.score>=0.72) return [a,b];
+    if(a.score>=threshold&&b.score>=threshold&&b.score/a.score>=0.72) return [a,b];
     return null;
   }
   function escText(s=''){ return esc(String(s)); }
@@ -18,11 +23,11 @@
   }
   function recommendationModel(scored){
     const pair=strongEnoughPair(scored.activity);
-    const activity=bestPositive(scored.activity);
-    const participation=bestPositive(scored.participation);
-    const media=bestPositive(scored.media);
-    const support=bestPositive(scored.support);
-    const role=bestPositive(scored.role);
+    const activity=recommended('activity',scored.activity);
+    const participation=recommended('participation',scored.participation);
+    const media=recommended('media',scored.media);
+    const support=recommended('support',scored.support);
+    const role=recommended('role',scored.role);
     return {
       activity,
       activityLabel:pair ? `${pair[0].name}＋${pair[1].name}` : (activity?.name||'活動条件を追加してください'),
@@ -83,13 +88,15 @@
     if(m.role) steps.push(`<li><b>${escText(m.role.name)}</b>を中心に、${escText(m.activityLabel)}で活動を組む。</li>`);
     else steps.push(`<li><b>${escText(m.activityLabel)}</b>を中心に活動を組む。</li>`);
     steps.push(`<li>参加形態は<b>${escText(m.participationLabel)}</b>を第一候補にする。</li>`);
-    steps.push(`<li>媒体は<b>${escText(m.mediaLabel)}</b>。必要がなければデジタル化を増やさない。</li>`);
+    if(m.media) steps.push(`<li>媒体は<b>${escText(m.mediaLabel)}</b>を第一候補にする。必要がなければデジタル化を増やさない。</li>`);
+    else steps.push('<li>媒体はまだ決めない。活動と教室条件を先に具体化する。</li>');
     if(m.support) steps.push(`<li>補助は<b>${escText(m.supportLabel)}</b>だけを優先し、機能を盛りすぎない。</li>`);
     else steps.push('<li>補助機能は追加なしでもよい。授業活動を先に完成させる。</li>');
     return `<section class="priority-panel"><h3>授業を組む順序</h3><ol class="lesson-flow">${steps.join('')}</ol></section>`;
   }
   function mediaUsage(scored){
-    const media=(scored.media||[]).filter(x=>x.score>0).slice(0,3);
+    const threshold=(RESULT_QUALITY_THRESHOLDS.media||{}).recommend||1;
+    const media=(scored.media||[]).filter(x=>x.score>=threshold).slice(0,3);
     if(!media.length){
       return `<section class="media-usage"><h3>媒体の使い分け</h3><p class="decision-muted">媒体はまだ確定しません。学習活動・参加形態・教室条件を先に決めてください。</p></section>`;
     }
@@ -135,5 +142,5 @@
     result.scrollIntoView({behavior:'smooth',block:'start'});
   };
 
-  globalThis.__LESSON_RESULT_UI__={recommendationModel};
+  globalThis.__LESSON_RESULT_UI__={recommendationModel,recommended};
 })();
