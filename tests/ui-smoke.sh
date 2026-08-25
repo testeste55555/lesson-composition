@@ -45,8 +45,9 @@ need_text assets/v2-acceptance.js 'data-suggest='
 need_text assets/v2-acceptance.js '活動ブロック候補も説明用で、得点には直接入りません。'
 reject_text assets/v2-acceptance.js 'fileAnalysis.features.forEach(k=>state.add(k))'
 
-# Genericity guard must remain loaded in production and CI source.
-need_text assets/v2-redteam.js 'runGenericityRedTeam'
+# Genericity RED TEAM layer must remain active in production.
+need_text assets/v2-redteam.js '_inferFeaturesBeforeRedTeam'
+need_text assets/v2-redteam.js "f.delete('cur_audio')"
 
 # Syntax smoke. Node is available on GitHub-hosted runners.
 for f in assets/v2.js assets/v2-patch.js assets/v2-acceptance.js assets/v2-redteam.js mobile/sw.js mobile/register-sw.js; do
