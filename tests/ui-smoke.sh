@@ -7,7 +7,7 @@ need_text(){ grep -Fq -- "$2" "$1" || fail "$1 missing: $2"; }
 reject_text(){ if grep -Fq -- "$2" "$1"; then fail "$1 contains forbidden regression: $2"; fi; }
 
 # Required public entry points and shared runtime.
-for f in index.html pc/index.html mobile/index.html assets/v2.js assets/v2-patch.js assets/v2-acceptance.js assets/v2-redteam.js assets/v2-quality.js mobile/sw.js mobile/register-sw.js mobile/manifest.webmanifest; do
+for f in index.html pc/index.html mobile/index.html assets/v2.js assets/v2-patch.js assets/v2-acceptance.js assets/v2-redteam.js assets/v2-quality.js assets/v2-result-ui.js assets/result-ui.css mobile/sw.js mobile/register-sw.js mobile/manifest.webmanifest; do
   need_file "$f"
 done
 
@@ -15,14 +15,23 @@ done
 need_text index.html 'href="pc/"'
 need_text index.html 'href="mobile/"'
 
-# PC and mobile must load the same decision layers in the same order.
+# PC and mobile must load the same decision layers.
 for f in pc/index.html mobile/index.html; do
   need_text "$f" '../assets/v2.js'
   need_text "$f" '../assets/v2-patch.js'
   need_text "$f" '../assets/v2-acceptance.js'
   need_text "$f" '../assets/v2-redteam.js'
   need_text "$f" '../assets/v2-quality.js'
+  need_text "$f" '../assets/v2-result-ui.js'
+  need_text "$f" '../assets/result-ui.css'
   need_text "$f" 'Content-Security-Policy'
+done
+
+# Result presentation must load after quality guardrails.
+for f in pc/index.html mobile/index.html; do
+  quality_line="$(grep -n '../assets/v2-quality.js' "$f" | cut -d: -f1)"
+  result_line="$(grep -n '../assets/v2-result-ui.js' "$f" | cut -d: -f1)"
+  [ "$result_line" -gt "$quality_line" ] || fail "$f result UI must load after quality layer"
 done
 
 # Mobile-only PWA wiring.
@@ -31,6 +40,8 @@ need_text mobile/index.html './register-sw.js'
 need_text mobile/sw.js '../assets/v2-acceptance.js'
 need_text mobile/sw.js '../assets/v2-redteam.js'
 need_text mobile/sw.js '../assets/v2-quality.js'
+need_text mobile/sw.js '../assets/v2-result-ui.js'
+need_text mobile/sw.js '../assets/result-ui.css'
 need_text mobile/sw.js "url.origin!==self.location.origin"
 
 # Two-mode product contract.
@@ -54,8 +65,15 @@ need_text assets/v2-quality.js 'RESULT_QUALITY_THRESHOLDS'
 need_text assets/v2-quality.js '追加機能なしでも可'
 need_text assets/v2-quality.js '未確定（活動・教室条件から選択）'
 
+# Decision-first result-screen contract.
+need_text assets/v2-result-ui.js 'この授業はこう組み直す'
+need_text assets/v2-result-ui.js 'まず何を残し、何を変えるか'
+need_text assets/v2-result-ui.js '媒体の使い分け'
+need_text assets/v2-result-ui.js '5軸の詳しい判定を見る'
+need_text assets/v2-result-ui.js '1つの媒体に統一する必要はありません'
+
 # Syntax smoke. Node is available on GitHub-hosted runners.
-for f in assets/v2.js assets/v2-patch.js assets/v2-acceptance.js assets/v2-redteam.js assets/v2-quality.js mobile/sw.js mobile/register-sw.js; do
+for f in assets/v2.js assets/v2-patch.js assets/v2-acceptance.js assets/v2-redteam.js assets/v2-quality.js assets/v2-result-ui.js mobile/sw.js mobile/register-sw.js; do
   node --check "$f" >/dev/null || fail "JavaScript syntax error in $f"
 done
 
