@@ -58,7 +58,10 @@ inferFeatures=function(raw){
   const hit=(r,k)=>{if(r.test(t))f.push(k)};
   hit(/ペア|二人|2人|ふたり|となりの人|相手/,'cur_pair');
   hit(/グループ|相談|話し合|はなしあ|チーム/,'cur_group');
-  hit(/ジェスチャ|動作|うごいて|動いて|立って|たって|たちます|座って|すわって|すわります|持って|もって|もちます|置いて|おいて|おきます|指して|さして|まねして/,'cur_movement');
+
+  // Movement must be evidenced by an instruction / activity cue, not merely by a verb such as 「もちます」.
+  hit(/ジェスチャ|TPR|動作をして|動作してください|うごいてください|動いてください|(?:立って|たって|座って|すわって|持って|もって|置いて|おいて|指して|さして).{0,12}(?:ください|みましょう)|しじのことば|指示のことば|cử chỉ|động tác|lakukan gerakan/,'cur_movement');
+
   hit(/言って|いって|話して|はなして|答えて|こたえて|発話|質問|しつもん|返事|へんじ|報告|ほうこく|会話|かいわ|何と言|なんとい/,'cur_speaking');
 
   // Do not treat vocabulary such as 「ききます」 as evidence that the material itself has audio.
@@ -85,7 +88,7 @@ inferFeatures=function(raw){
 inferBlocks=function(raw){
   const t=normalizeLessonText(raw); if(!t)return[];
   const rules=[
-    ['身体反応・操作',/ジェスチャ|動作|うごいて|立って|たって|すわって|座って|持って|もって|置いて|おいて|右|みぎ|左|ひだり|上|うえ|下|した/],
+    ['身体反応・操作',/ジェスチャ|TPR|動作をして|動作してください|うごいてください|動いてください|(?:立って|たって|座って|すわって|持って|もって|置いて|おいて|指して|さして).{0,12}(?:ください|みましょう)|しじのことば|指示のことば|cử chỉ|động tác|lakukan gerakan/],
     ['発話・文型練習',/言って|いって|話して|はなして|文型|ぶんけい|て形|てけい|れんしゅう|練習|発話|はつわ/],
     ['やり取り',/ペア|質問|しつもん|返事|へんじ|会話|かいわ|ロールプレイ|報告|ほうこく/],
     ['視覚認識・判断',/標識|ひょうしき|画像|イラスト|図を見|図をみ|絵を見|絵をみ|えをみ|どっち|どれ|選ん|えらん|ただしい/],
