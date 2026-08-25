@@ -1,0 +1,103 @@
+# Privacy-first defaults
+# This repository is public. Real lesson files, learner data, and local analysis inputs must never be committed.
+
+# --- Secrets / credentials ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+credentials*
+secrets*
+tokens*
+
+# --- Local/private working directories ---
+/private/
+/uploads/
+/input/
+/inputs/
+/local/
+/tmp/
+/temp/
+/scratch/
+/analysis-input/
+/lesson-input/
+/data/private/
+
+# --- Office / lesson source files ---
+*.ppt
+*.pptx
+*.pps
+*.ppsx
+*.pot
+*.potx
+*.doc
+*.docx
+*.odt
+*.rtf
+*.xls
+*.xlsx
+*.xlsm
+*.ods
+*.pdf
+
+# --- Archives ---
+*.zip
+*.7z
+*.rar
+*.tar
+*.gz
+*.tgz
+
+# --- Potentially identifying media: ignored by default ---
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.heic
+*.bmp
+*.tif
+*.tiff
+*.mp3
+*.wav
+*.m4a
+*.aac
+*.ogg
+*.mp4
+*.mov
+*.m4v
+*.avi
+*.webm
+
+# Reviewed, intentionally public media may be placed here.
+!assets/public/
+!assets/public/**
+
+# --- Local exports / generated analysis ---
+*.local.csv
+*.local.tsv
+*.local.json
+*_analysis.json
+*_analysis.csv
+*_results.json
+*_results.csv
+
+# --- OS / editor / build noise ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+node_modules/
+dist/
+build/
+.cache/
+coverage/
