@@ -1,5 +1,5 @@
-// Acceptance fixes for ZIP-wrapped OOXML and Japanese teaching materials.
-// This layer overrides V2 file analysis without changing the privacy-first model.
+// Generic acceptance fixes for ZIP-wrapped OOXML and lesson-file analysis.
+// Important: acceptance-test-specific vocabulary must not become production rules.
 
 function normalizeLessonText(s=''){
   return s
@@ -16,12 +16,13 @@ function detectZipLessonType(entries){
   return 'zip';
 }
 
-async function extractEntriesText(entries, type){
+async function extractEntriesText(entries,type){
   let selected=[];
   if(type==='pptx-zip') selected=entries.filter(e=>/^ppt\/(slides\/slide\d+|notesSlides\/notesSlide\d+)\.xml$/i.test(e.name));
   else if(type==='docx-zip') selected=entries.filter(e=>/^word\/(document|header\d+|footer\d+)\.xml$/i.test(e.name));
   else if(type==='xlsx-zip') selected=entries.filter(e=>/^xl\/(sharedStrings|worksheets\/sheet\d+)\.xml$/i.test(e.name));
   else selected=entries.filter(e=>/\.(txt|md|csv|json|html?|xml)$/i.test(e.name)).slice(0,160);
+
   const parts=[];
   for(const e of selected){
     try{parts.push(await entryText(e));}catch(_e){}
@@ -32,13 +33,21 @@ async function extractEntriesText(entries, type){
 extractFile=async function(f){
   const n=f.name.toLowerCase(),warnings=[];
   try{
-    if(/\.(txt|md|csv|json|html?|xml)$/.test(n)) return {text:normalizeLessonText(await f.text()),type:'text',warnings};
+    if(/\.(txt|md|csv|json|html?|xml)$/.test(n)){
+      return {text:normalizeLessonText(await f.text()),type:'text',warnings};
+    }
     if(/\.(pptx|docx|xlsx|zip)$/.test(n)){
       const entries=await readZip(await f.arrayBuffer());
-      const type=n.endsWith('.zip')?detectZipLessonType(entries):(n.endsWith('.pptx')?'pptx-zip':n.endsWith('.docx')?'docx-zip':'xlsx-zip');
+      const type=n.endsWith('.zip')
+        ?detectZipLessonType(entries)
+        :(n.endsWith('.pptx')?'pptx-zip':n.endsWith('.docx')?'docx-zip':'xlsx-zip');
       const text=await extractEntriesText(entries,type);
-      if(n.endsWith('.zip')&&type!=='zip') warnings.push(`${f.name}: ZIP内を${type.replace('-zip','').toUpperCase()}構造として認識しました。`);
-      if(!text) warnings.push(`${f.name}: 判定に使える本文を十分に抽出できませんでした。教師チェックを併用してください。`);
+      if(n.endsWith('.zip')&&type!=='zip'){
+        warnings.push(`${f.name}: ZIP内を${type.replace('-zip','').toUpperCase()}構造として認識しました。`);
+      }
+      if(!text){
+        warnings.push(`${f.name}: 判定に使える本文を十分に抽出できませんでした。教師チェックを併用してください。`);
+      }
       return {text,type,warnings};
     }
     if(n.endsWith('.pdf')){
@@ -53,54 +62,54 @@ extractFile=async function(f){
   }
 };
 
+// Only infer a lesson feature when the text suggests an activity/instruction/function.
+// Bare vocabulary items such as 「ききます」「もちます」「しゃしん」 are not enough.
 inferFeatures=function(raw){
   const t=normalizeLessonText(raw),f=[];
   const hit=(r,k)=>{if(r.test(t))f.push(k)};
-  hit(/ペア|二人|2人|ふたり|となりの人|相手/,'cur_pair');
-  hit(/グループ|相談|話し合|はなしあ|チーム/,'cur_group');
 
-  // Movement must be evidenced by an instruction / activity cue, not merely by a verb such as 「もちます」.
-  hit(/ジェスチャ|TPR|動作をして|動作してください|うごいてください|動いてください|(?:立って|たって|座って|すわって|持って|もって|置いて|おいて|指して|さして).{0,12}(?:ください|みましょう)|しじのことば|指示のことば|cử chỉ|động tác|lakukan gerakan/,'cur_movement');
+  hit(/ペア(?:で|になって|ワーク)|二人(?:で|一組)|2人(?:で|一組)|相手と|pair\s*work/i,'cur_pair');
+  hit(/グループ(?:で|ワーク)|チーム(?:で|活動)|相談して|話し合って|はなしあって|group\s*work/i,'cur_group');
+  hit(/身体を動か|からだをうごか|動作をして|どうさをして|ジェスチャーをして|立って.+(?:ください|しましょう)|座って.+(?:ください|しましょう)|持って.+(?:ください|しましょう)|置いて.+(?:ください|しましょう)|指して.+(?:ください|しましょう)/,'cur_movement');
+  hit(/言って(?:ください|みましょう)|いって(?:ください|みましょう)|話して(?:ください|みましょう)|はなして(?:ください|みましょう)|答えて(?:ください|みましょう)|こたえて(?:ください|みましょう)|質問して|しつもんして|発表して|会話練習|かいわれんしゅう|ロールプレイ/,'cur_speaking');
+  hit(/音声|リスニング|再生(?:する|ボタン)|聞いて(?:答|選|動|ください)|きいて(?:こた|えら|うご|ください)|音を聞いて|おとをきいて/,'cur_audio');
 
-  hit(/言って|いって|話して|はなして|答えて|こたえて|発話|質問|しつもん|返事|へんじ|報告|ほうこく|会話|かいわ|何と言|なんとい/,'cur_speaking');
+  hit(/翻訳|対訳|母語|言語切替|げんごきりかえ|translation|bilingual|multilingual/i,'cur_multilang');
+  const scriptSignals=[
+    /[ăâđêôơưĂÂĐÊÔƠƯà-ỹ]{3,}/,
+    /[ก-๙]{4,}/,
+    /[က-႟]{4,}/,
+    /[ក-៹]{4,}/,
+    /[ऀ-ॿ]{4,}/
+  ];
+  if(scriptSignals.some(r=>r.test(t)))f.push('cur_multilang');
 
-  // Do not treat vocabulary such as 「ききます」 as evidence that the material itself has audio.
-  hit(/音声|聞いて|きいて|リスニング|再生|発音を聞|はつおんをき|音を聞/,'cur_audio');
+  hit(/ランダム|シャッフル|順不同|じゅんふどう|randomi[sz]e/i,'cur_random');
+  hit(/もう一度|もういちど|くり返|繰り返|反復|復習|ふくしゅう|繰り返し練習|くりかえしれんしゅう/,'cur_repeat');
+  hit(/ヒント|正解|せいかい|答えを見|こたえをみ|フィードバック|正誤|せいご|○×|まるばつ/,'cur_feedback');
+  hit(/PreA1|CEFR|A1\s*(?:レベル|程度)|A2\s*(?:レベル|程度)|N5|N4|難易度|なんいど|レベル切替|れべるきりかえ/,'cur_level');
+  hit(/画像を見|がぞうをみ|イラストを見|イラストをみ|図を見|図をみ|絵を見|絵をみ|写真を見|しゃしんをみ|画面を見|がめんをみ/,'cur_visual');
 
-  // Prefer explicit labels or script-specific signals. This avoids mistaking image-source URLs for translations.
-  hit(/ベトナム|インドネシア|フィリピン|タガログ|タイ語|ミャンマー|クメール|中国語|ネパール|翻訳|母語|Tiếng\s*Việt|Bahasa\s*Indonesia|Filipino|Tagalog|မြန်မာ|ខ្មែរ|नेपाली|ไทย|中文/,'cur_multilang');
-  const vietnameseMarks=(t.match(/[ăâđêôơưĂÂĐÊÔƠƯà-ỹ]/g)||[]).length;
-  const seaWords=(t.match(/\b(?:Tolong|Harap|lakukan|gerakan|sesuai|dengan|sesuatu|Menyanyikan|Berpakaian|salamat|mangyaring|gawin)\b/gi)||[]).length;
-  if(vietnameseMarks>=4||seaWords>=3)f.push('cur_multilang');
-
-  hit(/ランダム|シャッフル|順不同|じゅんふどう/,'cur_random');
-  hit(/もう一度|もういちど|くり返|繰り返|反復|復習|ふくしゅう|れんしゅう|練習/,'cur_repeat');
-  hit(/ヒント|正解|せいかい|答え|こたえ|フィードバック|○|×|まる|ばつ/,'cur_feedback');
-
-  // Bare A1/A2 strings can occur in answer labels, so require explicit level context.
-  hit(/レベル|PreA1|CEFR|A1\s*(?:レベル|程度)|A2\s*(?:レベル|程度)|N5|N4|やさしい日本語/,'cur_level');
-
-  // Do not treat vocabulary such as 「しゃしんを とります」 as evidence that images are used.
-  hit(/画像|イラスト|図を見|図をみ|絵を見|絵をみ|えをみ|標識|ひょうしき|写真を見|しゃしんをみ/,'cur_visual');
   return [...new Set(f)];
 };
 
+// Generic activity blocks only. Do not create blocks named after one test lesson's topic.
 inferBlocks=function(raw){
   const t=normalizeLessonText(raw); if(!t)return[];
   const rules=[
-    ['身体反応・操作',/ジェスチャ|TPR|動作をして|動作してください|うごいてください|動いてください|(?:立って|たって|座って|すわって|持って|もって|置いて|おいて|指して|さして).{0,12}(?:ください|みましょう)|しじのことば|指示のことば|cử chỉ|động tác|lakukan gerakan/],
-    ['発話・文型練習',/言って|いって|話して|はなして|文型|ぶんけい|て形|てけい|れんしゅう|練習|発話|はつわ/],
-    ['やり取り',/ペア|質問|しつもん|返事|へんじ|会話|かいわ|ロールプレイ|報告|ほうこく/],
-    ['視覚認識・判断',/標識|ひょうしき|画像|イラスト|図を見|図をみ|絵を見|絵をみ|えをみ|どっち|どれ|選ん|えらん|ただしい/],
-    ['数・分類',/数え|かぞえ|かぞえかた|何個|なんこ|何人|なんにん|分類|ぶんるい|グループ/],
-    ['位置・指示',/いちのことば|位置|しじのことば|指示|右|みぎ|左|ひだり|上|うえ|下|した|前|まえ|後ろ|うしろ/],
-    ['語彙・標識',/こうつうひょうしき|交通標識|きょうのことば|ことば|語彙/],
-    ['動詞・語彙',/動詞|どうし|verb|verbs|kata kerja/]
+    ['身体反応・操作',/身体を動か|からだをうごか|動作をして|どうさをして|ジェスチャーをして|立って.+(?:ください|しましょう)|座って.+(?:ください|しましょう)|持って.+(?:ください|しましょう)|置いて.+(?:ください|しましょう)|指して.+(?:ください|しましょう)/],
+    ['発話・産出',/言って(?:ください|みましょう)|いって(?:ください|みましょう)|話して(?:ください|みましょう)|はなして(?:ください|みましょう)|答えて(?:ください|みましょう)|こたえて(?:ください|みましょう)|発表して|文を作|ぶんをつく/],
+    ['やり取り',/ペア(?:で|ワーク)|相手と|質問して|しつもんして|返事を|へんじを|会話練習|かいわれんしゅう|ロールプレイ|報告して|ほうこくして/],
+    ['協働・相談',/グループ(?:で|ワーク)|チーム(?:で|活動)|相談して|そうだんして|話し合って|はなしあって/],
+    ['視覚認識・判断',/画像を見|がぞうをみ|イラストを見|イラストをみ|図を見|図をみ|絵を見|絵をみ|写真を見|しゃしんをみ|選んで|えらんで|どれ|どっち|正しいもの|ただしいもの/],
+    ['反復・定着',/もう一度|もういちど|くり返|繰り返|反復|復習|ふくしゅう|繰り返し練習|くりかえしれんしゅう/],
+    ['評価・確認',/正解|せいかい|答えを見|こたえをみ|正誤|せいご|テスト|確認問題|かくにんもんだい|チェック/],
+    ['語彙・文型',/語彙|ごい|ことば|文型|ぶんけい|文法|ぶんぽう|例文|れいぶん/]
   ];
   const found=[];
   for(const [name,re] of rules){
     const m=t.match(new RegExp(re.source,'g'));
-    if(m&&m.length) found.push({name,evidence:m.length});
+    if(m&&m.length)found.push({name,evidence:m.length});
   }
   return found.sort((a,b)=>b.evidence-a.evidence).slice(0,7);
 };
