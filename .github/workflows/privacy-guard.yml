@@ -1,0 +1,59 @@
+name: Privacy Guard
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  privacy-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reject private lesson/source files
+        shell: bash
+        run: |
+          set -euo pipefail
+          tracked="$(git ls-files)"
+
+          forbidden='\.(ppt|pptx|pps|ppsx|pot|potx|doc|docx|odt|rtf|xls|xlsx|xlsm|ods|pdf|zip|7z|rar|tar|gz|tgz)$'
+          media='\.(jpg|jpeg|png|gif|webp|heic|bmp|tif|tiff|mp3|wav|m4a|aac|ogg|mp4|mov|m4v|avi|webm)$'
+          private_dirs='^(private|uploads|input|inputs|local|tmp|temp|scratch|analysis-input|lesson-input|data/private)/'
+          secret_names='(^|/)(\.env($|\.)|credentials|secrets|tokens)|\.(pem|key|p12|pfx|jks|keystore)$'
+
+          bad="$(printf '%s\n' "$tracked" | grep -Ei "$forbidden|$private_dirs|$secret_names" || true)"
+          bad_media="$(printf '%s\n' "$tracked" | grep -Ei "$media" | grep -Ev '^assets/public/' || true)"
+
+          if [ -n "$bad" ] || [ -n "$bad_media" ]; then
+            echo 'Privacy Guard: forbidden tracked files detected.'
+            [ -z "$bad" ] || printf '%s\n' "$bad"
+            [ -z "$bad_media" ] || printf '%s\n' "$bad_media"
+            exit 1
+          fi
+
+      - name: Reject obvious secret material
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git grep -nIE 'BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY|AKIA[0-9A-Z]{16}|gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}' -- ':!assets/public/**' ; then
+            echo 'Privacy Guard: possible secret material detected.'
+            exit 1
+          fi
+          exit 0
+
+      - name: Reject external script dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git grep -nEi '<script[^>]+src=["'"']https?://' -- '*.html' ; then
+            echo 'Privacy Guard: external script dependency detected. Review privacy impact before allowing it.'
+            exit 1
+          fi
+          exit 0
