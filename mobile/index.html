@@ -2,27 +2,18 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#172033">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="授業チェック">
+<link rel="manifest" href="manifest.webmanifest">
 <title>授業形態チェック｜スマホ版</title>
-<link rel="manifest" href="./manifest.webmanifest">
-<link rel="stylesheet" href="../assets/common.css">
-<link rel="stylesheet" href="./mobile.css">
+<link rel="stylesheet" href="../assets/v2.css">
 </head>
 <body>
-<header><div class="wrap"><h1>授業形態 観点別チェック｜スマホ版</h1><p>タップで選択し、画面下の「判定する」ですぐ結果を確認できます。</p></div></header>
-<main>
-<nav class="section-nav"><a href="#learner">学習者</a><a href="#goal">目標</a><a href="#manage">運営</a><a href="#condition">条件</a><a href="#current">元授業</a><a href="#issue">改善</a><a href="#result">結果</a><a href="../">入口へ</a></nav>
-<section class="card"><h2>使い方</h2><p class="note">「こうしたい」と「元授業」をタップで選択します。チェック状態はこの端末内に自動保存されます。</p></section>
-<div id="form"></div>
-<div class="counter" data-count></div>
-<section class="card result" id="result"><h2>判定結果</h2><div id="overview"></div><h3>① 授業形態の候補</h3><div id="modeRanks"></div><h3>② 教材媒体・道具の候補</h3><div id="mediaRanks"></div><h3>③ 元授業との比較</h3><div id="gaps"></div><h3>④ 組み合わせ案</h3><div id="blend"></div><div class="toolbar"><button class="secondary" data-copy>結果をコピー</button><button class="secondary" data-reset>リセット</button></div></section>
-</main>
-<div class="bottom-actions"><button class="judge" data-judge>判定する</button><button class="top" data-top aria-label="ページ上部へ">↑</button></div>
-<script src="../assets/app.js"></script>
-<script>if('serviceWorker' in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});</script>
+<header class="site"><div class="inner"><a href="../"><h1>授業形態 観点別チェック</h1></a><p>スマホ版｜タップだけで授業の方向性を整理</p></div></header>
+<main class="shell"><div id="app"></div></main>
+<script src="../assets/v2.js"></script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{});}</script>
 </body>
 </html>
