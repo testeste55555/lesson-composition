@@ -1,17 +1,19 @@
 const fs = require('fs');
 const vm = require('vm');
 
-const src = fs.readFileSync('assets/v2.js','utf8').replace(/\nrender\(\);\s*$/,'') + '\n;globalThis.__V2__=V2;';
+const base = fs.readFileSync('assets/v2.js','utf8').replace(/\nrender\(\);\s*$/,'') + '\n;globalThis.__V2__=V2;';
+const quality = fs.readFileSync('assets/v2-quality.js','utf8');
 const sandbox = {
   console,
   document:{querySelector(){return null},querySelectorAll(){return[]},createElement(){return {innerHTML:'',value:''}}},
-  location:{search:'',pathname:'/'}, history:{replaceState(){}}, navigator:{}, alert(){},
+  location:{search:'',pathname:'/'}, history:{replaceState(){}}, navigator:{clipboard:{writeText(){}}}, alert(){},
   URLSearchParams, TextDecoder, DataView, Uint8Array, Blob, Response, DecompressionStream: global.DecompressionStream,
 };
 vm.createContext(sandbox);
-try{ vm.runInContext(src, sandbox); }
-catch(e){ console.error('Cannot load V2:', e); process.exit(1); }
+try{ vm.runInContext(base, sandbox); vm.runInContext(quality, sandbox); }
+catch(e){ console.error('Cannot load scoring runtime:', e); process.exit(1); }
 const V2=sandbox.__V2__;
+const Q=sandbox.__LESSON_RESULT_QUALITY__;
 
 function score(axisKey, selected){
   const axis=V2.axes[axisKey];
@@ -54,5 +56,17 @@ must(score('support',new Set(keys)).find(x=>x.key==='l1').score===0,'PreA1 alone
 // 7. Learner device/self pace alone must not imply keeping history.
 keys=['learner_self','learner_device'];
 must(score('support',new Set(keys)).find(x=>x.key==='history').score===0,'device/self pace alone must not imply history');
+
+// 8. Weak evidence must never become a strong recommendation merely because it ranks first.
+must(Q.qualityTier('support',2)!=='強く推奨','weak support evidence must not be labelled strong');
+must(Q.qualityTier('media',1)==='候補','single weak media evidence should remain candidate');
+
+// 9. Zero-score options must be suppressible rather than filling a top-4 list.
+const none=score('media',new Set(['a2','interaction']));
+must(Q.positive(none).length===0,'zero-score media options should be suppressible');
+
+// 10. Close, sufficiently supported activity candidates should be representable as a hybrid rather than forced to one winner.
+const hybrid=Q.blendedTop('activity',[{name:'A',score:10},{name:'B',score:8},{name:'C',score:2}]);
+must(hybrid==='A＋B','close supported activities should produce a blended recommendation');
 
 if(!process.exitCode) console.log('Result Quality RED TEAM: PASS');
