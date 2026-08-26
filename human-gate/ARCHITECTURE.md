@@ -18,7 +18,7 @@ A vocabulary item is complete only when all of its candidate sentences have been
 
 Candidate packages may be created in internal batches, but batch labels are not shown in the teacher UI or exported result schema. Runtime candidate IDs are normalized to stable `Cxxxx` identifiers.
 
-Review records use the sync-ready fields:
+Review records use these fields:
 
 - `candidate_id`
 - `term`
@@ -28,14 +28,40 @@ Review records use the sync-ready fields:
 - `reviewer_id`
 - `reviewed_at`
 
-`reviewer_id` is reserved for the later shared-backend phase.
+`reviewer_id` is null in local-only mode. In shared mode it is the authenticated Firebase UID; teacher names and email addresses are not written into review records.
 
-## Current storage
+## Storage modes
 
-The current version stores progress in browser `localStorage` under schema version 2. This is temporary. Before two teachers begin large-scale production review, the storage adapter will be replaced with authenticated Firebase / Firestore synchronization.
+### Local-only mode
 
-Prototype v1 local progress is intentionally not auto-migrated because the prototype candidate ordering and canonical candidate IDs were not fully aligned. This prevents an old trial judgement from being attached to the wrong sentence.
+Default configuration. Progress is stored in browser `localStorage` under schema version 2. No Firebase requests are made.
+
+### Shared mode
+
+Shared mode is enabled only when `human-gate/firebase-config.js` has `enabled:true` and valid Firebase web configuration.
+
+- Firebase Authentication requires teacher sign-in.
+- Firestore stores one document per candidate review.
+- Firestore access is restricted to authenticated UIDs that have a `humanGateMembers/{uid}` membership document.
+- Local-first writes keep the interface responsive and queue temporary network failures.
+- Remote progress is refreshed approximately every 15 seconds.
+- Shared mode uses a separate local cache key, so old prototype/local review data is not silently migrated into the shared workspace.
+- CSV export uses the merged shared/local cache.
+
+The shared backend is the production path for two-teacher Human Gate. Do not begin large-scale two-person review until Firebase membership and Security Rules are configured and sync has been verified on both devices.
+
+## Conflict behavior
+
+If both teachers review the same candidate before the next synchronization, both local devices may temporarily show different results. After Firestore synchronization, the review with the later `reviewed_at` timestamp becomes the visible result. Category and vocabulary progress should be used to reduce duplicate work.
 
 ## Privacy and network
 
-The current structural version performs no external API calls and keeps `connect-src 'none'`. Firebase is not enabled yet.
+No CDN or external script is used. Firebase REST calls are made only when shared mode is enabled, and only to:
+
+- `identitytoolkit.googleapis.com`
+- `securetoken.googleapis.com`
+- `firestore.googleapis.com`
+
+Only Human Gate review metadata is synchronized. Student data, lesson files, attendance, scores, health information, teacher names, and teacher email addresses are not stored in Firestore review documents.
+
+See `docs/FIREBASE_SYNC_SETUP.md` and `firebase/firestore.rules` before enabling shared mode.
