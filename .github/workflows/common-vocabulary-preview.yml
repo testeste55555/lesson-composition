@@ -1,0 +1,44 @@
+name: Common Vocabulary Preview
+
+on:
+  push:
+    branches:
+      - feature/common-vocab-catalog-v1
+    paths:
+      - scripts/build_common_vocabulary.py
+      - .github/workflows/common-vocabulary-preview.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout lesson-composition
+        uses: actions/checkout@v4
+
+      - name: Checkout OTIT vocabulary source
+        uses: actions/checkout@v4
+        with:
+          repository: testeste55555/sample-sentences-selection
+          ref: f77a860ba24b61a10c6d70cb645d6ad8cd130f5b
+          path: _source
+
+      - name: Build common vocabulary catalog
+        run: |
+          python scripts/build_common_vocabulary.py \
+            --source _source/data/master/otit_vocabulary_master.csv \
+            --out-dir build/common-vocabulary \
+            --expected-approved 1856 \
+            --source-commit f77a860ba24b61a10c6d70cb645d6ad8cd130f5b
+
+      - name: Show summary
+        run: cat build/common-vocabulary/common_vocabulary_summary.json
+
+      - name: Upload preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: common-vocabulary-preview
+          path: build/common-vocabulary/
+          if-no-files-found: error
