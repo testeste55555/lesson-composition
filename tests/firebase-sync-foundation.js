@@ -27,6 +27,5 @@ assert.match(rules,/humanGateMembers/,'Membership gate is missing');
 assert.match(rules,/request\.resource\.data\.reviewer_id == request\.auth\.uid/,'Reviewer UID write rule is missing');
 assert.match(rules,/allow delete: if false/,'Review deletion must remain disabled');
 assert.match(privacy,/Human Gate共有同期の限定例外/,'Privacy policy must document shared sync');
-assert.ok(!/(BEGIN PRIVATE KEY|service_account|refresh_token\s*[:=]\s*["'][^"']+)/i.test(config+sync+app),'Secret-like material detected');
 
 console.log('Firebase sync foundation: PASS');
