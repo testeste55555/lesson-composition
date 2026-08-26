@@ -1,0 +1,25 @@
+name: Human Gate Data Integrity
+
+on:
+  pull_request:
+    paths:
+      - 'human-gate/**'
+      - 'tests/human-gate-data-integrity.js'
+      - '.github/workflows/human-gate-data-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'human-gate/**'
+      - 'tests/human-gate-data-integrity.js'
+      - '.github/workflows/human-gate-data-integrity.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check candidate corpus
+        run: node tests/human-gate-data-integrity.js
