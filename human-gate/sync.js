@@ -4,8 +4,9 @@
 const cfg=window.HG_FIREBASE_CONFIG||{};
 const enabled=cfg.enabled===true&&!!cfg.apiKey&&!!cfg.projectId;
 const REVIEW_COLLECTION=cfg.reviewCollection||"humanGateReviews";
-const FIREBASE_VERSION="12.18.0";
-const FIREBASE_BASE=`https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}`;
+const FIREBASE_APP_URL="https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+const FIREBASE_AUTH_URL="https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+const FIREBASE_FIRESTORE_URL="https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 let servicePromise=null;
 let listenerOff=null;
@@ -16,9 +17,9 @@ async function services(){
   if(!servicePromise){
     servicePromise=(async()=>{
       const [appMod,authMod,firestoreMod]=await Promise.all([
-        import(`${FIREBASE_BASE}/firebase-app.js`),
-        import(`${FIREBASE_BASE}/firebase-auth.js`),
-        import(`${FIREBASE_BASE}/firebase-firestore.js`)
+        import(FIREBASE_APP_URL),
+        import(FIREBASE_AUTH_URL),
+        import(FIREBASE_FIRESTORE_URL)
       ]);
       const app=appMod.initializeApp({apiKey:cfg.apiKey,projectId:cfg.projectId});
       const auth=authMod.initializeAuth(app,{persistence:authMod.browserSessionPersistence});
