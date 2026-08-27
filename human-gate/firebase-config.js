@@ -1,7 +1,6 @@
 window.HG_FIREBASE_CONFIG=Object.freeze({
-  enabled:false,
-  apiKey:"",
-  projectId:"",
-  pollIntervalMs:15000,
+  enabled:true,
+  apiKey:"AIzaSyA7ziGPNR30gXQgnQUHTrZ_xkPYjyr9eHA",
+  projectId:"lesson-composition-human-gate",
   reviewCollection:"humanGateReviews"
 });

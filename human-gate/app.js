@@ -49,7 +49,7 @@ function syncNotice(){
   const pending=Object.keys(state.sync_queue||{}).length;
   return `<div class="notice"><div class="syncrow"><strong class="${cls}">共有同期：${esc(syncState.message)}</strong><button class="secondary" id="logoutBtn">ログアウト</button></div><div style="margin-top:6px">Firebase共有モード${pending?`・未送信 ${pending}件`:""}</div></div>`;
 }
-function wireSyncNotice(){if(SYNC.enabled&&$("logoutBtn"))$("logoutBtn").onclick=()=>{SYNC.signOut();reviewerId=null;syncState={kind:"waiting",message:"ログイン待ち"};renderLogin()}}
+function wireSyncNotice(){if(SYNC.enabled&&$("logoutBtn"))$("logoutBtn").onclick=async()=>{try{await SYNC.signOut()}catch(e){}reviewerId=null;syncState={kind:"waiting",message:"ログイン待ち"};renderLogin()}}
 function render(){
   $("exportBtn").hidden=false;
   $("actions").hidden=state.ui.view!=="review";
@@ -115,12 +115,22 @@ function mergeRemote(rows,rerender=true){
 async function flushPending(){for(const rec of Object.values(state.sync_queue||{})){try{await SYNC.saveReview(rec);if(state.sync_queue?.[rec.candidate_id]?.reviewed_at===rec.reviewed_at)delete state.sync_queue[rec.candidate_id]}catch(e){syncState={kind:"error",message:"同期エラー・端末に一時保存"};break}}save()}
 async function connectShared(){
   reviewerId=SYNC.currentUser()?.uid||null;syncState={kind:"syncing",message:"同期中"};render();
-  try{const rows=await SYNC.fetchAllReviews();mergeRemote(rows,false);await flushPending();syncState={kind:"synced",message:"同期済み"};render();await SYNC.start(rows=>mergeRemote(rows,true),(kind)=>{if(kind==="error"){syncState={kind:"error",message:"同期エラー・端末に一時保存"};if(state.ui.view==="home")render()}else{syncState={kind:"synced",message:"同期済み"};if(state.ui.view==="home")render()}})}catch(e){syncState={kind:"error",message:"同期できません"};render()}
+  try{
+    await flushPending();
+    await SYNC.start(rows=>mergeRemote(rows,true),(kind)=>{if(kind==="error"){syncState={kind:"error",message:"同期エラー・端末に一時保存"};if(state.ui.view==="home")render()}else{syncState={kind:"synced",message:"同期済み"};if(state.ui.view==="home")render()}});
+    syncState={kind:"synced",message:"同期済み"};render();
+  }catch(e){syncState={kind:"error",message:"同期できません"};render()}
 }
 
 $("heartBtn").onclick=()=>applyReview("HEART");$("rejectBtn").onclick=()=>applyReview("REJECT");$("editBtn").onclick=enterEdit;$("cancelEditBtn").onclick=exitEdit;$("saveEditBtn").onclick=()=>{const v=$("editArea").value.trim();if(v)applyReview("EDIT",v)};$("prevBtn").onclick=()=>move(-1);$("nextBtn").onclick=()=>move(1);$("exportBtn").onclick=exportCSV;
 document.addEventListener("keydown",e=>{if(state.ui.view!=="review")return;const ta=$("editArea");if(ta&&!ta.hidden)return;if(e.key==="1")applyReview("HEART");else if(e.key==="2")enterEdit();else if(e.key==="3")applyReview("REJECT");else if(e.key==="ArrowLeft")move(-1);else if(e.key==="ArrowRight")move(1)});
 
-load();if(!CATEGORY_ORDER.includes(state.ui.category)&&state.ui.view!=="home")state.ui={view:"home",category:null,term:null,index:0};
-if(SYNC.enabled){if(SYNC.hasSession()){reviewerId=SYNC.currentUser()?.uid||null;connectShared()}else renderLogin()}else render();
+async function boot(){
+  load();if(!CATEGORY_ORDER.includes(state.ui.category)&&state.ui.view!=="home")state.ui={view:"home",category:null,term:null,index:0};
+  if(!SYNC.enabled){render();return}
+  $("headerTitle").textContent="共有Human Gate";$("exportBtn").hidden=true;$("actions").hidden=true;$("main").innerHTML='<section class="panel"><div class="sub">Firebase共有同期を準備しています…</div></section>';
+  try{await SYNC.ready()}catch(e){renderLogin("Firebase共有同期を初期化できませんでした。通信環境または設定を確認してください。");return}
+  if(SYNC.hasSession()){reviewerId=SYNC.currentUser()?.uid||null;await connectShared()}else renderLogin();
+}
+boot();
 })();

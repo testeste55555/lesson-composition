@@ -57,3 +57,18 @@ jobs:
             exit 1
           fi
           exit 0
+
+      - name: Restrict remote JavaScript module imports
+        shell: bash
+        run: |
+          set -euo pipefail
+          urls="$(git grep -nE 'https://[^"'"'"'` )]+' -- 'human-gate/*.js' || true)"
+          bad="$(printf '%s\n' "$urls" | grep -Ev 'human-gate/sync\.js:.*https://www\.gstatic\.com/firebasejs/12\.18\.0/firebase-(app|auth|firestore)\.js' || true)"
+          if [ -n "$bad" ]; then
+            echo 'Privacy Guard: unapproved remote JavaScript URL detected.'
+            printf '%s\n' "$bad"
+            exit 1
+          fi
+          grep -Fq 'https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js' human-gate/sync.js
+          grep -Fq 'https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js' human-gate/sync.js
+          grep -Fq 'https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js' human-gate/sync.js
