@@ -8,6 +8,7 @@ const app=read('human-gate/app.js');
 const html=read('human-gate/index.html');
 const rules=read('firebase/firestore.rules');
 const privacy=read('PRIVACY.md');
+const setup=read('docs/FIREBASE_SYNC_SETUP.md');
 
 assert.match(config,/enabled:true/,'Firebase shared sync must be enabled');
 assert.match(config,/apiKey:"AIza[0-9A-Za-z_-]+"/,'Firebase Web API key is missing');
@@ -17,7 +18,8 @@ assert.doesNotMatch(config,/pollIntervalMs/,'Polling interval must be removed fr
 assert.match(sync,/firebasejs\/12\.18\.0\/firebase-app\.js/,'Pinned Firebase App SDK is missing');
 assert.match(sync,/firebasejs\/12\.18\.0\/firebase-auth\.js/,'Pinned Firebase Auth SDK is missing');
 assert.match(sync,/firebasejs\/12\.18\.0\/firebase-firestore\.js/,'Pinned Firebase Firestore SDK is missing');
-assert.match(sync,/browserSessionPersistence/,'Firebase Auth must use session-scoped persistence');
+assert.match(sync,/browserLocalPersistence/,'Firebase Auth must persist login on the teacher device');
+assert.doesNotMatch(sync,/browserSessionPersistence/,'Session-only Firebase Auth persistence must not remain');
 assert.match(sync,/signInWithEmailAndPassword/,'Firebase Auth email/password sign-in is missing');
 assert.match(sync,/onSnapshot/,'Firestore realtime listener is missing');
 assert.match(sync,/docChanges\(\)/,'Realtime updates must consume document changes after the initial snapshot');
@@ -43,5 +45,8 @@ assert.match(rules,/allow delete: if false/,'Review deletion must remain disable
 assert.match(privacy,/Human Gate共有同期の限定例外/,'Privacy policy must document shared sync');
 assert.match(privacy,/12\.18\.0/,'Privacy policy must document the pinned Firebase SDK version');
 assert.match(privacy,/Analytics、Messaging、Storage、AI\/Gemini等のSDKは読み込みません/,'Privacy policy must exclude unnecessary Firebase products');
+assert.match(privacy,/ログイン状態/,'Privacy policy must document persistent login state');
+assert.match(setup,/browserLocalPersistence/,'Firebase setup doc must document persistent browser login');
+assert.match(setup,/共有端末/,'Firebase setup doc must warn about logout on shared devices');
 
 console.log('Firebase realtime sync configuration: PASS');
