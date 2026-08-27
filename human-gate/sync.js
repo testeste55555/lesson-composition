@@ -22,7 +22,7 @@ async function services(){
         import(FIREBASE_FIRESTORE_URL)
       ]);
       const app=appMod.initializeApp({apiKey:cfg.apiKey,projectId:cfg.projectId});
-      const auth=authMod.initializeAuth(app,{persistence:authMod.browserSessionPersistence});
+      const auth=authMod.initializeAuth(app,{persistence:authMod.browserLocalPersistence});
       authRef=auth;
       if(typeof auth.authStateReady==="function")await auth.authStateReady();
       else await new Promise(resolve=>{const off=authMod.onAuthStateChanged(auth,()=>{off();resolve()})});
