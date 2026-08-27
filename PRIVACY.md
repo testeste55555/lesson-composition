@@ -64,7 +64,7 @@ GitHub Pages自体への通常のWebアクセスでは、ホスティング基�
 
 Firebase Web API keyはブラウザ向け公開クライアント設定であり、サービスアカウント鍵等の秘密情報とは区別します。使用する場合は対象API・GitHub Pagesのreferrer制限等を可能な範囲で設定し、秘密鍵・Admin SDK認証情報・アクセストークン等は引き続きコミット禁止とします。
 
-リアルタイム同期には、Google公式 `www.gstatic.com` からバージョン固定したFirebase JavaScript SDKの `app` / `auth` / `firestore` モジュールだけを読み込みます。Analytics、Messaging、Storage、AI/Gemini等のSDKは読み込みません。外部スクリプトの一般解禁ではなく、Human Gate共有同期に必要な公式Firebase SDKだけを限定例外とします。CSPとPrivacy Guardの双方で許可先・バージョン・モジュールを固定します。
+リアルタイム同期には、Google公式 `www.gstatic.com` からFirebase JavaScript SDK **12.18.0** の `app` / `auth` / `firestore` モジュールだけを読み込みます。Analytics、Messaging、Storage、AI/Gemini等のSDKは読み込みません。外部スクリプトの一般解禁ではなく、Human Gate共有同期に必要な公式Firebase SDKだけを限定例外とします。CSPとPrivacy Guardの双方で許可先・バージョン・モジュールを固定します。
 
 Firestoreの永続IndexedDBキャッシュは有効化しません。レビュー共有用のローカルキャッシュと未送信キューだけを既存のHuman Gate用 `localStorage` 領域に保持します。
 
