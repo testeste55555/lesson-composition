@@ -1,0 +1,22 @@
+name: Firebase Sync Foundation
+
+on:
+  pull_request:
+    paths:
+      - 'human-gate/**'
+      - 'firebase/**'
+      - 'docs/FIREBASE_SYNC_SETUP.md'
+      - 'PRIVACY.md'
+      - 'tests/firebase-sync-foundation.js'
+      - '.github/workflows/firebase-sync-foundation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Firebase sync foundation tests
+        run: node tests/firebase-sync-foundation.js

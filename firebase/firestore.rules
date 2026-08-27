@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isMember() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/humanGateMembers/$(request.auth.uid));
+    }
+
+    match /humanGateMembers/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /humanGateReviews/{candidateId} {
+      allow read: if isMember();
+      allow create, update: if isMember()
+        && request.resource.data.keys().hasOnly([
+          'candidate_id',
+          'term',
+          'category',
+          'action',
+          'revised_text',
+          'reviewer_id',
+          'reviewed_at'
+        ])
+        && request.resource.data.candidate_id == candidateId
+        && request.resource.data.reviewer_id == request.auth.uid
+        && request.resource.data.action in ['HEART', 'EDIT', 'REJECT'];
+      allow delete: if false;
+    }
+  }
+}
