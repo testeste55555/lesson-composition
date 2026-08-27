@@ -65,7 +65,10 @@ The Firebase Web API key is a public client identifier in a browser app, not a s
 When synchronization is enabled:
 
 - teachers must sign in,
-- Firebase Authentication uses session-scoped browser persistence,
+- Firebase Authentication uses `browserLocalPersistence`, so the signed-in state normally survives closing and reopening the browser on that device,
+- the password itself is not stored by the Human Gate application,
+- selecting the Human Gate logout button clears the Firebase signed-in state,
+- on a 共有端末 / shared PC or tablet, teachers must log out after use,
 - local trial data is not automatically migrated into the shared workspace,
 - the shared cache uses a different localStorage key,
 - review writes are saved locally first and then sent to Firestore,
