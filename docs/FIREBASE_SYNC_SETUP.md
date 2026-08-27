@@ -1,10 +1,12 @@
 # Firebase sync setup for Human Gate
 
-This repository keeps Firebase synchronization disabled by default. Enable it only after the project, Authentication users, Firestore membership documents, and Security Rules are ready.
+Human Gate uses Firebase Authentication and Cloud Firestore only after the project, Authentication users, Firestore membership documents, and Security Rules are ready.
 
 ## 1. Create the Firebase project
 
 Create one Firebase project on the Spark plan. Do not enable paid billing for this Human Gate use case unless it becomes necessary later.
+
+Google Analytics and Gemini integrations are not required for this application.
 
 ## 2. Enable Authentication
 
@@ -52,28 +54,41 @@ window.HG_FIREBASE_CONFIG=Object.freeze({
   enabled:true,
   apiKey:"<Firebase Web API key>",
   projectId:"<Firebase project id>",
-  pollIntervalMs:15000,
   reviewCollection:"humanGateReviews"
 });
 ```
 
 The Firebase Web API key is a public client identifier in a browser app, not a service-account secret. Restrict the key to the intended Firebase/Google APIs and to the GitHub Pages referrer where practical. Never commit service-account JSON, Admin SDK keys, passwords, refresh tokens, or access tokens.
 
-## 6. Shared-review behavior
+## 6. Realtime shared-review behavior
 
 When synchronization is enabled:
 
 - teachers must sign in,
+- Firebase Authentication uses session-scoped browser persistence,
 - local trial data is not automatically migrated into the shared workspace,
 - the shared cache uses a different localStorage key,
 - review writes are saved locally first and then sent to Firestore,
 - temporary network failures stay in a local retry queue,
-- remote progress is refreshed approximately every 15 seconds,
-- CSV export still works from the merged local/shared state.
+- Firestore `onSnapshot()` performs the initial review read once and then receives document changes in realtime,
+- there is no fixed 15-second full-collection polling,
+- CSV export works from the merged local/shared state.
 
-If both teachers edit the same candidate at nearly the same time, the later review timestamp becomes the visible result after synchronization. In normal operation, use category/term progress to avoid duplicate work.
+If both teachers edit the same candidate at nearly the same time, the later review timestamp becomes the visible result after synchronization. Realtime propagation reduces, but does not mathematically eliminate, simultaneous-edit collisions.
 
-## 7. Privacy boundary
+## 7. Firebase Web SDK loading
+
+The Human Gate page loads only these pinned Firebase JavaScript SDK browser modules from Google's official `www.gstatic.com` host:
+
+- `firebase-app.js`
+- `firebase-auth.js`
+- `firebase-firestore.js`
+
+The version is fixed in `human-gate/sync.js` rather than using an unpinned/latest URL. Analytics, Messaging, Storage, AI/Gemini SDKs, and other Firebase products are not loaded.
+
+Content Security Policy permits `www.gstatic.com` only for these Firebase browser modules and keeps Firebase network endpoints restricted to the Authentication/token/Firestore hosts required by the app.
+
+## 8. Privacy boundary
 
 Only Human Gate review metadata is synchronized: candidate ID, term, category, action, revised text, pseudonymous Firebase UID, and review timestamp.
 
