@@ -70,6 +70,10 @@ Firebase Web API keyはブラウザ向け公開クライアント設定であり
 
 Firestoreの永続IndexedDBキャッシュは有効化しません。レビュー共有用のローカルキャッシュと未送信キューだけを既存のHuman Gate用 `localStorage` 領域に保持します。
 
+Collocation Human Gate V1.1では候補データをFirestoreへ保存せず、公開アプリ内の固定データとして配布します。Firestoreのreview documentはcandidate ID、term ID、generation version、判定、修正文、空欄を含むnotes、Firebase UID、timestampsだけに限定します。document IDはcandidate IDとUIDを組み合わせ、2名の判定を別documentとして保持します。認証メールアドレスは現在のセッション表示にだけ使用し、review documentおよびCSVへ出力しません。
+
+V1.1の共有キャッシュと未送信キューは、それぞれ `collocation_human_gate_v1_1_shared_cache` と `collocation_human_gate_v1_1_pending_writes` を使用します。旧ローカル専用キー `collocation_human_gate_v1_1_reviews` を検出しても、自動的に共有reviewへ移植しません。
+
 ## 5. 誤コミット時
 
 個人情報や秘密情報を誤ってコミットした場合、単に最新コミットから削除するだけではGit履歴に残ります。公開停止・履歴からの削除・必要に応じた認証情報の失効を優先して実施します。

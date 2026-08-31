@@ -1,0 +1,33 @@
+name: Collocation Human Gate V1.1
+
+on:
+  pull_request:
+    paths:
+      - 'collocation-human-gate/**'
+      - 'scripts/build-collocation-human-gate-data.py'
+      - 'firebase/**'
+      - 'firebase.json'
+      - '.firebaserc'
+      - 'docs/FIREBASE_SYNC_SETUP.md'
+      - 'PRIVACY.md'
+      - 'tests/collocation-human-gate-v1-1.js'
+      - '.github/workflows/collocation-human-gate-v1-1.yml'
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check browser JavaScript syntax
+        run: |
+          node --check collocation-human-gate/model.js
+          node --check collocation-human-gate/sync.js
+          node --check collocation-human-gate/app.js
+          node --check collocation-human-gate/data/candidates.js
+      - name: Run Collocation Human Gate tests
+        run: node tests/collocation-human-gate-v1-1.js
