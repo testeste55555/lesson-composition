@@ -28,5 +28,64 @@ service cloud.firestore {
         && request.resource.data.action in ['HEART', 'EDIT', 'REJECT'];
       allow delete: if false;
     }
+
+    function validCollocationReview(reviewId) {
+      return request.resource.data.keys().hasAll([
+          'schema_version',
+          'review_id',
+          'collocation_id',
+          'term_id',
+          'generation_version',
+          'reviewer_id',
+          'review_action',
+          'revised_collocation_text',
+          'notes',
+          'client_reviewed_at',
+          'updated_at'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'schema_version',
+          'review_id',
+          'collocation_id',
+          'term_id',
+          'generation_version',
+          'reviewer_id',
+          'review_action',
+          'revised_collocation_text',
+          'notes',
+          'client_reviewed_at',
+          'updated_at'
+        ])
+        && request.resource.data.schema_version == 1
+        && request.resource.data.review_id == reviewId
+        && request.resource.data.collocation_id is string
+        && request.resource.data.collocation_id.size() > 0
+        && request.resource.data.term_id is string
+        && request.resource.data.term_id.size() > 0
+        && request.resource.data.generation_version == 'collocation-v1.1-2026-08-31'
+        && request.resource.data.reviewer_id == request.auth.uid
+        && reviewId == request.resource.data.collocation_id + '__' + request.auth.uid
+        && request.resource.data.review_action in ['HEART', 'EDIT', 'REJECT']
+        && request.resource.data.revised_collocation_text is string
+        && (
+          (request.resource.data.review_action == 'EDIT'
+            && request.resource.data.revised_collocation_text.size() > 0)
+          || (request.resource.data.review_action in ['HEART', 'REJECT']
+            && request.resource.data.revised_collocation_text == '')
+        )
+        && request.resource.data.notes is string
+        && request.resource.data.client_reviewed_at is string
+        && request.resource.data.updated_at == request.time;
+    }
+
+    match /collocationHumanGateReviewsV1_1/{reviewId} {
+      allow read: if isMember();
+      allow create: if isMember() && validCollocationReview(reviewId);
+      allow update: if isMember()
+        && validCollocationReview(reviewId)
+        && request.resource.data.reviewer_id == resource.data.reviewer_id
+        && request.resource.data.collocation_id == resource.data.collocation_id;
+      allow delete: if false;
+    }
   }
 }

@@ -7,6 +7,7 @@ PreA1〜A2を中心に、学習者の「発話・行動」から授業形態を�
 - `/` : PC版／スマホ版の入口
 - `/pc/` : PC版
 - `/mobile/` : スマホ版（PWA・オフラインキャッシュ対応）
+- `/collocation-human-gate/` : Collocation Human Gate V1.1（認証済み教員向け共有判定）
 
 PC版・スマホ版は同じ判定エンジンを使用します。
 

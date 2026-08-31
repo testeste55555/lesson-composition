@@ -101,3 +101,5 @@ dist/
 build/
 .cache/
 coverage/
+__pycache__/
+*.py[cod]

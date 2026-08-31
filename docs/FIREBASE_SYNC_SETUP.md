@@ -12,7 +12,7 @@ Google Analytics and Gemini integrations are not required for this application.
 
 Enable Email/Password sign-in.
 
-Create exactly the teacher accounts that should use Human Gate. Do not commit teacher email addresses or passwords to this repository.
+Create exactly the teacher accounts that should use Human Gate. A two-teacher Collocation Human Gate test requires two distinct Firebase Authentication UIDs; do not share one account. Do not commit teacher email addresses or passwords to this repository.
 
 ## 3. Create Firestore
 
@@ -30,6 +30,8 @@ The document may contain only a non-personal marker such as:
 
 The application does not read names or email addresses from Firestore. The membership document ID is the Firebase Authentication UID.
 
+Create a membership document for each of the two Collocation Human Gate test accounts before testing realtime behavior.
+
 ## 4. Apply Security Rules
 
 Use `firebase/firestore.rules` as the canonical ruleset.
@@ -42,6 +44,14 @@ The rules:
 - allow review writes only when `reviewer_id` equals the authenticated UID,
 - reject extra review fields,
 - reject review deletion.
+
+The same ruleset also protects `collocationHumanGateReviewsV1_1`. Its document ID is `{collocation_id}__{firebase_uid}`, so the two teachers retain separate documents. Deploy with:
+
+```bash
+firebase deploy --only firestore:rules --project lesson-composition-human-gate
+```
+
+Do not test by temporarily opening the database. If deployment access is unavailable, keep the restrictive rules in the repository and report `RULES_DEPLOY_REQUIRED`.
 
 ## 5. Configure the web client
 
@@ -57,6 +67,8 @@ window.HG_FIREBASE_CONFIG=Object.freeze({
   reviewCollection:"humanGateReviews"
 });
 ```
+
+Collocation Human Gate V1.1 uses `collocation-human-gate/firebase-config.js` with the same project and public Web API key, but its collection is fixed to `collocationHumanGateReviewsV1_1` and its generation version is fixed to `collocation-v1.1-2026-08-31`.
 
 The Firebase Web API key is a public client identifier in a browser app, not a service-account secret. Restrict the key to the intended Firebase/Google APIs and to the GitHub Pages referrer where practical. Never commit service-account JSON, Admin SDK keys, passwords, refresh tokens, or access tokens.
 
@@ -77,7 +89,14 @@ When synchronization is enabled:
 - there is no fixed 15-second full-collection polling,
 - CSV export works from the merged local/shared state.
 
-If both teachers edit the same candidate at nearly the same time, the later review timestamp becomes the visible result after synchronization. Realtime propagation reduces, but does not mathematically eliminate, simultaneous-edit collisions.
+The original Human Gate retains its existing shared-record behavior. Collocation Human Gate V1.1 instead stores one document per candidate and UID. It preserves both teachers' reviews and marks differing actions or differing EDIT text as `CONFLICT`; it does not collapse them with last-write-wins.
+
+Collocation Human Gate V1.1 uses these separate local keys:
+
+- `collocation_human_gate_v1_1_shared_cache`
+- `collocation_human_gate_v1_1_pending_writes`
+
+The old local-only key `collocation_human_gate_v1_1_reviews` is never auto-migrated. If detected, the app reports `LOCAL_REVIEW_MIGRATION_REQUIRED`.
 
 ## 7. Firebase Web SDK loading
 
@@ -94,5 +113,7 @@ Content Security Policy permits `www.gstatic.com` only for these Firebase browse
 ## 8. Privacy boundary
 
 Only Human Gate review metadata is synchronized: candidate ID, term, category, action, revised text, pseudonymous Firebase UID, and review timestamp.
+
+For Collocation Human Gate V1.1, terms, categories, candidates, internal generation types, and candidate classes remain in the static application payload. Firestore receives only the review schema described in `collocation-human-gate/ARCHITECTURE.md`.
 
 Do not put student names, teacher names, email addresses, lesson files, attendance, scores, health information, company-private information, or other personal data into review text or Firestore documents.
