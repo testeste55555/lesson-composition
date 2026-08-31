@@ -53,19 +53,23 @@ must(score('support',new Set(keys)).find(x=>x.key==='level').score===0,'A2 alone
 keys=['prea1'];
 must(score('support',new Set(keys)).find(x=>x.key==='l1').score===0,'PreA1 alone must not imply L1 support');
 
-// 7. Learner device/self pace alone must not imply keeping history.
+// 7. Multiple L1s alone must not imply translation support.
+keys=['mixed_l1'];
+must(score('support',new Set(keys)).find(x=>x.key==='l1').score===0,'mixed L1 alone must not imply L1 support');
+
+// 8. Learner device/self pace alone must not imply keeping history.
 keys=['learner_self','learner_device'];
 must(score('support',new Set(keys)).find(x=>x.key==='history').score===0,'device/self pace alone must not imply history');
 
-// 8. Weak evidence must never become a strong recommendation merely because it ranks first.
+// 9. Weak evidence must never become a strong recommendation merely because it ranks first.
 must(Q.qualityTier('support',2)!=='強く推奨','weak support evidence must not be labelled strong');
 must(Q.qualityTier('media',1)==='候補','single weak media evidence should remain candidate');
 
-// 9. Zero-score options must be suppressible rather than filling a top-4 list.
+// 10. Zero-score options must be suppressible rather than filling a top-4 list.
 const none=score('media',new Set(['a2','interaction']));
 must(Q.positive(none).length===0,'zero-score media options should be suppressible');
 
-// 10. Close, sufficiently supported activity candidates should be representable as a hybrid rather than forced to one winner.
+// 11. Close, sufficiently supported activity candidates should be representable as a hybrid rather than forced to one winner.
 const hybrid=Q.blendedTop('activity',[{name:'A',score:10},{name:'B',score:8},{name:'C',score:2}]);
 must(hybrid==='A＋B','close supported activities should produce a blended recommendation');
 
